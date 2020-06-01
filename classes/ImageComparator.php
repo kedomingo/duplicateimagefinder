@@ -53,6 +53,12 @@ class ImageComparator
         $img1 = $this->getResource($file1);
         $img2 = $this->getResource($file2);
 
+        // If two files are exactly the same, return immediately with the maximum score
+        $score = $this->compareFileSize($file1, $file2);
+        if (!empty($score)) {
+            return $score;
+        }
+
         $resized1 = $this->resizer->resize($img1, $width);
         $resized2 = $this->resizer->resize($img2, $width);
 
@@ -60,6 +66,17 @@ class ImageComparator
         $colorsScore = $this->compareImageColors($resized1, $resized2);
 
         return (($heightScore * self::HEIGHT_SCORE_WEIGHT) + ($colorsScore * self::COLOR_SCORE_WEIGHT)) / 100;
+    }
+
+    /**
+     * @param string $file1
+     * @param string $file2
+     *
+     * @return int
+     */
+    private function compareFileSize(string $file1, string $file2) : int {
+
+        return md5_file($file1) === md5_file($file2) ? 1 : 0;
     }
 
     /**
