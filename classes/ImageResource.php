@@ -69,7 +69,7 @@ class ImageResource
     /**
      * @param $img
      */
-    private function setResource($img)
+    public function setResource($img)
     {
         $this->img = $img;
     }

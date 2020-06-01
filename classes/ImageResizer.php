@@ -9,6 +9,8 @@ class ImageResizer
      */
     public function resize(ImageResource $image, $width) : ImageResource
     {
-        return ImageResource::createFromResource(imagescale($image->getResource(), $width));
+        $image->setResource(imagescale($image->getResource(), $width));
+
+        return $image;
     }
 }

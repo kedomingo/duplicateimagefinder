@@ -2,14 +2,8 @@
 
 class ImageComparator
 {
-    // Should total 100
-    private const SIZE_SCORES = [
-        32 => 100,
-        //        4  => 10,
-        //        16 => 20,
-        //        32 => 30,
-        //        64 => 40,
-    ];
+    // Downsample image to this wide
+    private const COMPARISON_WIDTH = 32;
 
     // height score contributes to 10% of the total score
     private const HEIGHT_SCORE_WEIGHT = 10;
@@ -41,11 +35,7 @@ class ImageComparator
      */
     public function compare($file1, $file2)
     {
-        $score = 0.0;
-        foreach (self::SIZE_SCORES as $size => $contribution) {
-            $score += ($contribution * $this->compareWithSize($file1, $file2, $size));
-        }
-        $score /= 100;
+        $score = $this->compareWithSize($file1, $file2, self::COMPARISON_WIDTH);
 
         return $score;
     }
