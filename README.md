@@ -37,6 +37,13 @@ $rgb_closeness_score = (0.9759 + 0.9476 + 0.9231) / 3 = 0.9489
 The scores of each pixel compared are averaged to get the total color-comparison score
 
 ### Limitations
+
+#### Performance
+This is a bad solution because each file are being compared to each other,
+then between two files, all the pixels are being compared. A directory with 1,000 files will require 1,000,000 comparisons. 
+This will be worse if the images in the directory are large, say, more than 1mb.
+
+#### Accuracy
 This is a naïve solution written as a quick workaround to paid apps. The objective of this solution is to find almost exact matches. No AI is involved.
 
 A more robust approach to image similarity should also take into a account not just the colors in the same positions, but also whether the objects in the image has shifted (the colors will not match in the same coordinates). This will require a more advanced solution.
