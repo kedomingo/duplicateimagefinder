@@ -8,8 +8,8 @@ final class ClosenessComparator implements ClosenessComparatorInterface {
      * Closeness function. Returns 1 if both numbers are equal, otherwise return a non-zero number less than 1.
      * Do not return zero to prevent total disregard of other scores, if the scores are multiplied with each other
      *
-     * @param $num1
-     * @param $num2
+     * @param int|float $num1
+     * @param int|float $num2
      *
      * @return float
      */

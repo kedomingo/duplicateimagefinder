@@ -31,38 +31,38 @@ final class ImageColor
 
     /**
      * ImageColor constructor.
-     * @param     $img
-     * @param int $rgb
+     * @param resource $img
+     * @param int      $rgb
      */
     public function __construct($img, int $rgb)
     {
         $result      = imagecolorsforindex($img, $rgb);
-        $this->red   = $result[self::COLOR_INDEX_RED];
-        $this->green = $result[self::COLOR_INDEX_GREEN];
-        $this->blue  = $result[self::COLOR_INDEX_BLUE];
+        $this->red   = (int)$result[self::COLOR_INDEX_RED];
+        $this->green = (int)$result[self::COLOR_INDEX_GREEN];
+        $this->blue  = (int)$result[self::COLOR_INDEX_BLUE];
         $this->alpha = $result[self::COLOR_INDEX_ALPHA];
     }
 
     /**
-     * @return mixed
+     * @return int
      */
-    public function getRed()
+    public function getRed() : int
     {
         return $this->red;
     }
 
     /**
-     * @return mixed
+     * @return int
      */
-    public function getGreen()
+    public function getGreen() : int
     {
         return $this->green;
     }
 
     /**
-     * @return mixed
+     * @return int
      */
-    public function getBlue()
+    public function getBlue() : int
     {
         return $this->blue;
     }

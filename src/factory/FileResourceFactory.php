@@ -30,7 +30,7 @@ final class FileResourceFactory
      */
     public function __construct(ImageResizerInterface $imageResizer, ColorAveragerInterface $colorAverager)
     {
-        $this->imageResizer = $imageResizer;
+        $this->imageResizer  = $imageResizer;
         $this->colorAverager = $colorAverager;
     }
 
@@ -81,7 +81,8 @@ final class FileResourceFactory
     /**
      * Find exact duplicate files
      *
-     * @param FileResource[] $files
+     * @param FileResource ...$files
+     *
      * @return FileResource[]
      */
     private function findDuplicateFiles(FileResource ...$files) : array

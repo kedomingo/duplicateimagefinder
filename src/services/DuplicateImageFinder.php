@@ -135,11 +135,11 @@ final class DuplicateImageFinder implements DuplicateImageFinderInterface
     /**
      * Get the files from the given directory
      *
-     * @param $directory
+     * @param string $directory
      *
-     * @return array
+     * @return string[]
      */
-    private function getFiles($directory)
+    private function getFiles(string $directory) : array
     {
         $filesAndFolders = scandir($directory);
         $files           = [];

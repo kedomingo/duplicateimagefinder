@@ -14,7 +14,7 @@ final class ImageResource
     /**
      * ImageResource constructor.
      *
-     * @param $gdresource
+     * @param resource $gdresource
      */
     public function __construct($gdresource)
     {
@@ -38,7 +38,7 @@ final class ImageResource
     }
 
     /**
-     * @param $img
+     * @param resource $img
      */
     public function setResource($img)
     {
@@ -46,7 +46,7 @@ final class ImageResource
     }
 
     /**
-     * @return mixed
+     * @return resource
      */
     public function getResource()
     {

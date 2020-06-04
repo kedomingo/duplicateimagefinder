@@ -15,5 +15,8 @@
     "minimum-stability": "alpha",
     "autoload": {
         "psr-4": {"DIF\\": "src/"}
+    },
+    "require-dev": {
+        "phpstan/phpstan": "^0.12.25"
     }
 }

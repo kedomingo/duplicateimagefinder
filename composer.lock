@@ -4,8 +4,8 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
         "This file is @generated automatically"
     ],
-    "hash": "3deb1df88e0fe59f9edcf5202cf04c21",
-    "content-hash": "79251807dcfe8529a2662f6d3c15eaaa",
+    "hash": "80ace23258b15d6adbac2aa5c39cc38a",
+    "content-hash": "fc6737966b3cd6b4a71d65dc6024560b",
     "packages": [
         {
             "name": "jeremeamia/superclosure",
@@ -419,7 +419,50 @@
             "time": "2020-05-12 16:14:59"
         }
     ],
-    "packages-dev": [],
+    "packages-dev": [
+        {
+            "name": "phpstan/phpstan",
+            "version": "0.12.25",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/phpstan/phpstan.git",
+                "reference": "9619551d68b2d4c0d681a8df73f3c847c798ee64"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/9619551d68b2d4c0d681a8df73f3c847c798ee64",
+                "reference": "9619551d68b2d4c0d681a8df73f3c847c798ee64",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.1"
+            },
+            "conflict": {
+                "phpstan/phpstan-shim": "*"
+            },
+            "bin": [
+                "phpstan",
+                "phpstan.phar"
+            ],
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "0.12-dev"
+                }
+            },
+            "autoload": {
+                "files": [
+                    "bootstrap.php"
+                ]
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "description": "PHPStan - PHP Static Analysis Tool",
+            "time": "2020-05-10 20:36:16"
+        }
+    ],
     "aliases": [],
     "minimum-stability": "alpha",
     "stability-flags": [],

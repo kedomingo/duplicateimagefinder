@@ -22,7 +22,7 @@ interface DuplicatesSorterInterface
      * @param DuplicateFile $file1
      * @param DuplicateFile $file2
      *
-     * @return int
+     * @return float
      */
     public function sortBySize(DuplicateFile $file1, DuplicateFile $file2) : float;
 }

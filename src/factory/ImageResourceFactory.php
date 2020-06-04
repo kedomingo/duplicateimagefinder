@@ -55,7 +55,7 @@ final class ImageResourceFactory
     }
 
     /**
-     * @param $img
+     * @param resource $img
      *
      * @return ImageResource
      */

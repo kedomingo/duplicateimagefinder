@@ -52,6 +52,18 @@ $rgb_closeness_score = (0.9759 + 0.9476 + 0.9231) / 3 = 0.9489
 
 The scores of each pixel compared are averaged to get the total color-comparison score
 
+### Dependencies
+
+* PHP 7.2
+* PHP GD Extension
+* phpdi
+* phpstan for dev
+
+```
+# Run phpstan to check the code for cleanliness
+./vendor/phpstan/phpstan/phpstan analyse --level 2 src/
+```
+
 ### Limitations
 
 #### Performance
