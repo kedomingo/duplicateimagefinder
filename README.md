@@ -16,10 +16,21 @@ php finder.php  -d testfolder -t 60
 * --move-duplicates - Will remove the duplicates from the input directory and move them to a backup directory
 
 ## Algorithm
-Files are recursively fetched in the given directory. Each image file is compared to one another by:
-1. Downsampling them to 32px
-1. Comparing their dimension (10% of the score)
-2. Comparing their color (90% of the score)
+Files are recursively fetched in the given directory. Each image file is compared to one another using 3 phases:
+
+### Phase 1: Duplicate File Detection
+1. Get the file sizes from the list, group the files with exactly the same sizes.
+2. From the groups, calculate the MD5sum of the files and compare each other. Mark the files with the same hashes as duplicates
+
+### Phase 2: Total Scene Color
+1. Resize the image to a 1x1 pixel, and let GD decide the average color of the pixel.
+2. Sort the files based on the pixels color closeness to the other files.
+3. Use the user-given threshold to skip files that is beyond threshold to save processing power (e.g. If the given threshold is 80% - if pixel of image 100 is only 79% similar to pixel of image 1, skip images 100 and beyond)
+
+### Phase 3: Scaled down image
+1. From the images with similar scenes from Phase 2, downsample them to 32px
+1. Compare their dimension (10% of the score)
+2. Compare their color (90% of the score)
 
 ### Dimension
 Since both images are resized to the same width, the resulting height will be used as contributing factor to the comparison. When 2 images vary in height drastically (e.g. one is in landscape orientation while the other is in portrait), it will lower the total score of the comparison
