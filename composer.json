@@ -3,7 +3,8 @@
     "description": "A simple duplicate image finder tool",
     "require": {
         "ext-gd": "^7.2",
-        "php": "7.2.*"
+        "php": "7.2.*",
+        "php-di/php-di": "^6.1"
     },
     "authors": [
         {

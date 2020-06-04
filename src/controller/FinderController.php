@@ -134,6 +134,7 @@ class FinderController
                 }
                 echo ($duplicate->isBasisFile() ? '* ' : '') . $duplicate->getFilename()."\n";
             }
+            echo "\n";
         }
     }
 

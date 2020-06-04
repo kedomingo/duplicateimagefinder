@@ -1,20 +1,16 @@
 <?php
 
 use DIF\Controller\FinderController;
-use DIF\Factory\FileResourceFactory;
-use DIF\Services\ClosenessComparator;
-use DIF\Services\ColorComparator;
-use DIF\Services\DuplicateImageFinder;
-use DIF\Services\ImageComparator;
 
 require 'vendor/autoload.php';
 
+// Build DI container
+$containerBuilder = new DI\ContainerBuilder();
+$containerBuilder->addDefinitions('config/services.php');
+$container = $containerBuilder->build();
 
-$colorComparator = new ColorComparator(new ClosenessComparator());
-$imageComparator  = new ImageComparator(new ClosenessComparator(), $colorComparator);
-$finder           = new DuplicateImageFinder($imageComparator, $colorComparator, new FileResourceFactory());
-
-(new FinderController($finder))->start();
+$duplicateImageFinderController = $container->get(FinderController::class);
+$duplicateImageFinderController->start();
 
 
 /**

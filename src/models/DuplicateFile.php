@@ -80,7 +80,7 @@ final class DuplicateFile
      */
     public function getAlternates() : array
     {
-        return $this->alternates;
+        return $this->alternates ?? [];
     }
 
     /**
