@@ -1,5 +1,11 @@
 <?php
 
+namespace DIF\Models;
+
+use DIF\Exception\UnsupportedImageException;
+use DIF\Services\ImageResizer;
+use DIF\Services\ImageResizerInterface;
+
 class ImageResource
 {
     private const SUPPORTED_MIMES = [
@@ -22,16 +28,16 @@ class ImageResource
     private $totalColorAverage;
 
     /**
-     * @var ImageResizer
+     * @var ImageResizerInterface
      */
     private $resizer;
 
     /**
      * ImageResource constructor.
      *
-     * @param ImageResizer $resizer
+     * @param ImageResizerInterface $resizer
      */
-    private function __construct(ImageResizer $resizer)
+    private function __construct(ImageResizerInterface $resizer)
     {
         $this->resizer = $resizer;
     }

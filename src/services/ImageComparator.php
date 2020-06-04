@@ -1,13 +1,12 @@
 <?php
 
-class ImageComparator
-{
-    /**
-     * Keep track of known scores between 2 hashes. Prevent re-calculation of duplicate files
-     * @var array
-     */
-    private $knownScores = [];
+namespace DIF\Services;
 
+use DIF\Models\FileResource;
+use DIF\Models\ImageResource;
+
+final class ImageComparator implements ImageComparatorInterface
+{
     // height score contributes to 10% of the total score
     private const HEIGHT_SCORE_WEIGHT = 10;
 
@@ -15,11 +14,41 @@ class ImageComparator
     private const COLOR_SCORE_WEIGHT = 90;
 
     /**
+     * Keep track of known scores between 2 hashes. Prevent re-calculation of duplicate files
+     * @var array
+     */
+    private $knownScores = [];
+
+    /**
+     * @var ClosenessComparatorInterface
+     */
+    private $closenessComparator;
+
+    /**
+     * @var ColorComparatorInterface
+     */
+    private $colorComparator;
+
+    /**
+     * ImageComparator constructor.
+     * @param ClosenessComparatorInterface $closenessComparator
+     * @param ColorComparatorInterface     $colorComparator
+     */
+    public function __construct(
+        ClosenessComparatorInterface $closenessComparator,
+        ColorComparatorInterface $colorComparator
+    )
+    {
+        $this->closenessComparator = $closenessComparator;
+        $this->colorComparator     = $colorComparator;
+    }
+
+    /**
      * @param FileResource $file1
      * @param FileResource $file2
      * @return float
      */
-    public function compare(FileResource $file1, FileResource $file2)
+    public function compare(FileResource $file1, FileResource $file2) : float
     {
         $hash1 = $file1->getUniqueIdentifier();
         $hash2 = $file2->getUniqueIdentifier();
@@ -58,7 +87,7 @@ class ImageComparator
         $height1 = $img1->getHeight();
         $height2 = $img2->getHeight();
 
-        return $this->closeness($height1, $height2);
+        return $this->closenessComparator->compare($height1, $height2);
     }
 
     /**
@@ -79,33 +108,10 @@ class ImageComparator
                 $color1 = $img1->getColorAt($x, $y);
                 $color2 = $img2->getColorAt($x, $y);
 
-                $scores[] = $color1->compareTo($color2);
+                $scores[] = $this->colorComparator->compare($color1, $color2);
             }
         }
 
         return array_sum($scores) / count($scores);
     }
-
-    /**
-     * Closeness function. Returns 1 if both numbers are equal, otherwise return a non-zero number less than 1.
-     * Do not return zero to prevent total disregard of other scores, if the scores are multiplied with each other
-     *
-     * @param $num1
-     * @param $num2
-     *
-     * @return float|int
-     */
-    private function closeness($num1, $num2)
-    {
-        // Both 0, equal
-        if ($num1 - $num2 === 0) {
-            return 1;
-        }
-        // One is zero, avoid division by zero
-        $num1 = $num1 !== 0 ? $num1 : 0.01;
-        $num2 = $num2 !== 0 ? $num2 : 0.01;
-
-        return $num1 <= $num2 ? $num1 / $num2 : $num2 / $num1;
-    }
-
 }

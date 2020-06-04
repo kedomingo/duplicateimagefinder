@@ -1,5 +1,11 @@
 <?php
 
+namespace DIF\Factory;
+
+use DIF\Exception\UnsupportedImageException;
+use DIF\Models\FileResource;
+use DIF\Models\ImageResource;
+
 class FileResourceFactory
 {
     private const DEFAULT_SCALE_WIDTH = 32;
@@ -8,7 +14,6 @@ class FileResourceFactory
      * @param string ...$filenames
      *
      * @return FileResource[]
-     * @throws Exception
      */
     public function getFileResources(string ...$filenames) : array
     {

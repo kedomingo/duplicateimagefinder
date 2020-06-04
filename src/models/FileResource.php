@@ -1,5 +1,7 @@
 <?php
 
+namespace DIF\Models;
+
 class FileResource
 {
     /**

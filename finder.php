@@ -1,214 +1,23 @@
 <?php
 
-require 'classes/ImageResourceCollection.php';
-require 'classes/ImageColor.php';
-require 'classes/ImageResource.php';
-require 'classes/ImageResizer.php';
-require 'classes/ImageComparator.php';
-require 'classes/UnsupportedImageException.php';
-require 'classes/FileResource.php';
-require 'classes/FileResourceFactory.php';
+use DIF\Controller\FinderController;
+use DIF\Factory\FileResourceFactory;
+use DIF\Services\ClosenessComparator;
+use DIF\Services\ColorComparator;
+use DIF\Services\DuplicateImageFinder;
+use DIF\Services\ImageComparator;
 
-class Finder
-{
-    private $comparator;
-
-    /**
-     * @var FileResourceFactory
-     */
-    private $imageResourceFactory;
-
-    /**
-     * Finder constructor.
-     * @param ImageComparator     $comparator
-     * @param FileResourceFactory $imageResourceFactory
-     */
-    public function __construct(
-        ImageComparator $comparator,
-        FileResourceFactory $imageResourceFactory
-    ) {
-        $this->comparator           = $comparator;
-        $this->imageResourceFactory = $imageResourceFactory;
-    }
-
-    /**
-     * Scan the directory for duplicates
-     *
-     * @param string $directory
-     * @param int    $threshold
-     * @return array
-     * @throws Exception
-     */
-    public function scan(string $directory, int $threshold)
-    {
-        $directory = rtrim($directory, '/');
-        $files     = $this->getFiles($directory);
-
-        $fileResources = $this->imageResourceFactory->getFileResources(...$files);
-        usort($fileResources, function (FileResource $a, FileResource $b) {
-            return $a->compareColorAverageTo($b);
-        });
-
-        $fileCount           = count($fileResources);
-        $requiredComparisons = $fileCount * ($fileCount - 1) / 2;
-        echo sprintf("Found %d files. %s max comparisons required\n", $fileCount, number_format($requiredComparisons));
-
-        $progress    = 0;
-        $comparisons = [];
-        $skip        = [];
-        for ($i = 0; $i < $fileCount; $i++) {
-            $file1 = $fileResources[$i]->getName();
-            if (isset($skip[$file1])) {
-                continue;
-            }
-            for ($j = $i + 1; $j < $fileCount; $j++) {
-                $file2 = $fileResources[$j]->getName();
-                if (isset($skip[$file2])) {
-                    continue;
-                }
-                $percent = ++$progress * 100 / $requiredComparisons;
-                echo "\r" . $progress . ' ' . round($percent, 2) . '% ';
-
-                // current image being checked is already outside similarity threshold. Skip this and the next images
-                if ($fileResources[$i]->getTotalColorAverage()->compareTo($fileResources[$j]->getTotalColorAverage()) * 100 < $threshold) {
-                    $progress += $fileCount - ($j + 1);
-                    break;
-                }
-
-                $comparisons[$file1][$file2] = $this->comparator->compare($fileResources[$i], $fileResources[$j]);
-                if ($comparisons[$file1][$file2] * 100 >= $threshold) {
-                    $skip[$file1] = 1;
-                    $skip[$file2] = 1;
-                }
-            }
-        }
-
-        return $comparisons;
-    }
-
-    public function getFiles($directory)
-    {
-        $filesAndFolders = scandir($directory);
-        $files           = [];
-        foreach ($filesAndFolders as $file) {
-            if ($file === '.' || $file === '..') {
-                continue;
-            }
-            $path = $directory . '/' . $file;
-            if (!is_dir($path)) {
-                $files[] = $path;
-            }
-        }
-
-        foreach ($filesAndFolders as $file) {
-            if ($file === '.' || $file === '..') {
-                continue;
-            }
-            $path = $directory . '/' . $file;
-            if (is_dir($path)) {
-                $files = array_merge($files, $this->getFiles($path));
-            }
-        }
-
-        return $files;
-    }
-}
+require 'vendor/autoload.php';
 
 
-$comparator       = new ImageComparator();
-$factory          = new FileResourceFactory();
-$finder           = new Finder($comparator, $factory);
-$defaultThreshold = 60;
+$colorComparator = new ColorComparator(new ClosenessComparator());
+$imageComparator  = new ImageComparator(new ClosenessComparator(), $colorComparator);
+$finder           = new DuplicateImageFinder($imageComparator, $colorComparator, new FileResourceFactory());
 
-// Directory
-$shortopts = "d:";
-$shortopts .= "t:";
-$shortopts .= "m::";
+(new FinderController($finder))->start();
 
-$longopts = array(
-    "dir:",
-    "threshold:",
-    "match-priority::",
-    "move-duplicates",
-);
 
-$options = getopt($shortopts, $longopts);
-
-$directory       = isset($options['d']) ? $options['d'] : (isset($options['dir']) ? $options['dir'] : null);
-$threshold       = isset($options['t']) ? $options['t'] : (isset($options['threshold']) ? $options['threshold'] : $defaultThreshold);
-$prioritizeMatch = isset($options['m']) || isset($options['match-priority']);
-$moveDuplicates  = isset($options['move-duplicates']);
-
-if (empty($directory) || empty($threshold)) {
-    echo "You must define the scan directory and duplicate threshold percent using -d and -t options\n";
-    exit;
-}
-if (!is_numeric($threshold) || $threshold < 1 || $threshold > 100) {
-    echo "Threshold must be a number between 1 and 100\n";
-    exit;
-}
-
-if ($prioritizeMatch) {
-    echo "Priotitizing match percentage is faulty when you want to keep bigger files and there are duplicate smaller files. Use with caution. Press any key to continue. Ctrl+C to stop";
-    readline();
-}
-
-$result = $finder->scan($directory, $threshold);
-
-$foundDuplicates = [];
-foreach ($result as $file1 => $duplicates) {
-    $maxscore = 0;
-    foreach ($duplicates as $file2 => $score) {
-        if ($score * 100 >= $threshold) {
-            $maxscore                  = max($maxscore, $score);
-            $foundDuplicates[$file1][] = [
-                'file'  => $file2,
-                'score' => $score,
-                'size'  => filesize($file2)
-            ];
-        }
-    }
-    // If duplicates are set, add the base image and set the score to the max match score
-
-    if (isset($foundDuplicates[$file1])) {
-        $foundDuplicates[$file1][] = [
-            'file'  => $file1,
-            'score' => $maxscore,
-            'size'  => filesize($file1),
-            'base'  => true
-        ];
-    }
-
-    if (isset($foundDuplicates[$file1])) {
-        usort($foundDuplicates[$file1], function ($a, $b) use ($prioritizeMatch) {
-            if ($prioritizeMatch) {
-                $percentGroup1 = floor($a['score'] * 10);
-                $percentGroup2 = floor($b['score'] * 10);
-                if ($percentGroup1 != $percentGroup2) {
-                    return $percentGroup2 - $percentGroup1;
-                }
-
-                return $b['size'] - $a['size'];
-            }
-
-            return ($b['size'] * $b['score']) - ($a['size'] * $a['score']);
-        });
-    }
-}
-
-echo "\n\n\n-----------------------------------\n";
-echo "Results\n";
-echo "-----------------------------------\n\n\n";
-
-foreach ($foundDuplicates as $group => $duplicates) {
-    foreach ($duplicates as $k => $duplicate) {
-        if ($k > 0) {
-            echo "    ";
-        }
-        echo (isset($duplicate['base']) ? '* ' : '') . $duplicate['file'] . ' ' . round($duplicate['size'] / 1024) . 'kB' . ' - ' . round($duplicate['score'] * 100) . '% match' . "\n";
-    }
-}
-
+/**
 if (!$moveDuplicates) {
     echo "\n\nAdd option --move-duplicates to move the duplicates found into a backup directory";
 } else {
@@ -230,3 +39,5 @@ if (!$moveDuplicates) {
 }
 
 echo "\n\n\n";
+ *
+ * */

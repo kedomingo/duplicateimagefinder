@@ -1,0 +1,18 @@
+{
+    "name": "kedomingo/duplicateimagefinder",
+    "description": "A simple duplicate image finder tool",
+    "require": {
+        "ext-gd": "^7.2",
+        "php": "7.2.*"
+    },
+    "authors": [
+        {
+            "name": "Kyle Domingo",
+            "email": "kedomingo@gmail.com"
+        }
+    ],
+    "minimum-stability": "alpha",
+    "autoload": {
+        "psr-4": {"DIF\\": "src/"}
+    }
+}
