@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 
 namespace DIF\Controller;
 
@@ -121,10 +121,10 @@ class FinderController
 
         $this->runtimeOptions    = $this->getOptions();
         $this->inputDirectory    = $this->getArg($this->runtimeOptions, self::OPTION_DIRECTORY);
-        $this->threshold         = $this->getArg($this->runtimeOptions, self::OPTION_THRESHOLD,
+        $this->threshold         = (int)$this->getArg($this->runtimeOptions, self::OPTION_THRESHOLD,
             self::DEFAULT_THRESHOLD);
-        $this->isPrioritizeMatch = $this->getArg($this->runtimeOptions, self::OPTION_MATCH_PRIORITY);
-        $this->isMoveDuplicates  = $this->getArg($this->runtimeOptions, self::OPTION_MOVE_DUPLICATES);
+        $this->isPrioritizeMatch = (bool)$this->getArg($this->runtimeOptions, self::OPTION_MATCH_PRIORITY);
+        $this->isMoveDuplicates  = (bool)$this->getArg($this->runtimeOptions, self::OPTION_MOVE_DUPLICATES);
         if ($this->isMoveDuplicates) {
             $this->backupDirectory = $this->getArg($this->runtimeOptions, self::OPTION_BACKUP_DIRECTORY);
         }

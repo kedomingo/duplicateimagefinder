@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 
 namespace DIF\Services;
 
@@ -14,7 +14,7 @@ interface DuplicatesSorterInterface
      *
      * @return int
      */
-    public function sortByScore(DuplicateFile $file1, DuplicateFile $file2) : int;
+    public function sortByScoreGroup(DuplicateFile $file1, DuplicateFile $file2) : int;
 
     /**
      * usorter
@@ -24,5 +24,5 @@ interface DuplicatesSorterInterface
      *
      * @return int
      */
-    public function sortBySize(DuplicateFile $file1, DuplicateFile $file2) : int;
+    public function sortBySize(DuplicateFile $file1, DuplicateFile $file2) : float;
 }

@@ -1,8 +1,13 @@
-<?php
+<?php declare(strict_types = 1);
 
 namespace DIF\Models;
 
-class FileResource
+/**
+ * Class FileResource
+ *
+ * A composition of file information, duplicates information, and image resource
+ */
+final class FileResource
 {
     /**
      * @var string
@@ -95,14 +100,6 @@ class FileResource
     }
 
     /**
-     * @return bool
-     */
-    public function hasDuplicates() : bool
-    {
-        return !empty($this->getDuplicates());
-    }
-
-    /**
      * Recursively links the image resource to this file and its duplicates
      *
      * @param ImageResource $imageResource
@@ -121,17 +118,9 @@ class FileResource
     /**
      * @return ImageResource
      */
-    public function getImageResource() : ImageResource {
-        return $this->imageResource;
-    }
-
-    /**
-     * @param FileResource $other
-     * @return int|lt
-     */
-    public function compareColorAverageTo(FileResource $other)
+    public function getImageResource() : ImageResource
     {
-        return $this->getImageResource()->compareColorAverageTo($other->getImageResource());
+        return $this->imageResource;
     }
 
     /**

@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 
 namespace DIF\Services;
 
@@ -52,8 +52,9 @@ final class DuplicateImageFinder implements DuplicateImageFinderInterface
         $files     = $this->getFiles($directory);
 
         $fileResources = $this->imageResourceFactory->getFileResources(...$files);
+        // Sort by color
         usort($fileResources, function (FileResource $a, FileResource $b) {
-            return $a->compareColorAverageTo($b);
+            return $this->colorComparator->compareRGBString($a->getTotalColorAverage(), $b->getTotalColorAverage());
         });
 
         $fileCount           = count($fileResources);

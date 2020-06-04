@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 
 namespace DIF\Services;
 
@@ -32,7 +32,7 @@ final class DuplicatesRenderer implements DuplicatesRendererInterface
         foreach ($files as $filegroup) {
             $duplicates = $filegroup->getAlternates();
             if ($isPrioritizeMatch) {
-                usort($duplicates, [$this->sorter, 'sortByScore']);
+                usort($duplicates, [$this->sorter, 'sortByScoreGroup']);
             } else {
                 usort($duplicates, [$this->sorter, 'sortBySize']);
             }

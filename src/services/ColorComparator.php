@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 
 namespace DIF\Services;
 
@@ -45,6 +45,18 @@ final class ColorComparator implements ColorComparatorInterface
         }
 
         return $this->knownComparisons[$rgb1][$rgb2];
+    }
+
+    /**
+     * Compare the RGB sequence strings
+     *
+     * @param ImageColor $color1
+     * @param ImageColor $color2
+     * @return int
+     */
+    public function compareRGBString(ImageColor $color1, ImageColor $color2) : int
+    {
+        return strcmp($color1->getRGBSequence(), $color2->getRGBSequence());
     }
 }
 

@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 
 namespace DIF\Services;
 
@@ -14,12 +14,12 @@ final class DuplicatesSorter implements DuplicatesSorterInterface
      *
      * @return int
      */
-    public function sortByScore(DuplicateFile $file1, DuplicateFile $file2) : int
+    public function sortByScoreGroup(DuplicateFile $file1, DuplicateFile $file2) : int
     {
         $percentGroup1 = floor($file1->getScore() * 10);
         $percentGroup2 = floor($file2->getScore() * 10);
         if ($percentGroup1 != $percentGroup2) {
-            return $percentGroup2 - $percentGroup1;
+            return (int)($percentGroup2 - $percentGroup1);
         }
 
         return $file2->getFilesize() - $file1->getFilesize();
@@ -31,9 +31,9 @@ final class DuplicatesSorter implements DuplicatesSorterInterface
      * @param DuplicateFile $file1
      * @param DuplicateFile $file2
      *
-     * @return int
+     * @return float
      */
-    public function sortBySize(DuplicateFile $file1, DuplicateFile $file2) : int
+    public function sortBySize(DuplicateFile $file1, DuplicateFile $file2) : float
     {
         return ($file2->getFilesize() * $file2->getScore()) - ($file1->getFilesize() * $file1->getScore());
     }

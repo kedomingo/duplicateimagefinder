@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types = 1);
 
 namespace DIF\Services;
 
@@ -13,5 +13,5 @@ interface ImageResizerInterface
      *
      * @return bool|resource
      */
-    public function scale(ImageResource $image, int $width, int $height);
+    public function scale(ImageResource $image, int $width, ?int $height = -1);
 }

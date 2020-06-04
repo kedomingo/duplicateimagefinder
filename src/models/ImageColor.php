@@ -1,8 +1,8 @@
-<?php
+<?php declare(strict_types = 1);
 
 namespace DIF\Models;
 
-class ImageColor
+final class ImageColor
 {
     private const COLOR_INDEX_RED   = 'red';
     private const COLOR_INDEX_GREEN = 'green';
@@ -72,9 +72,9 @@ class ImageColor
      */
     public function getRGBSequence() : string
     {
-        return str_pad($this->getRed(), 3, '0')
-            . str_pad($this->getGreen(), 3, '0')
-            . str_pad($this->getBlue(), 3, '0');
+        return str_pad((string)$this->getRed(), 3, '0')
+            . str_pad((string)$this->getGreen(), 3, '0')
+            . str_pad((string)$this->getBlue(), 3, '0');
     }
 
     /**

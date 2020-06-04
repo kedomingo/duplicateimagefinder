@@ -1,7 +1,7 @@
-<?php
+<?php declare(strict_types = 1);
 
 namespace DIF\Exception;
 
-class ContinuableException extends \Exception {
+final class ContinuableException extends \Exception {
 
 }
