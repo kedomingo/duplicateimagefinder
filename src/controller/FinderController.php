@@ -5,8 +5,9 @@ namespace DIF\Controller;
 use DIF\Exception\ContinuableException;
 use DIF\Exception\InvalidArgumentException;
 use DIF\Exception\MissingArgumentException;
-use DIF\Models\DuplicateFile;
 use DIF\Services\DuplicateImageFinderInterface;
+use DIF\Services\DuplicatesRemoverInterface;
+use DIF\Services\DuplicatesRendererInterface;
 
 class FinderController
 {
@@ -15,31 +16,38 @@ class FinderController
     private const OPTION_FLAG_IS_BOOLEAN  = 'isBoolean';
     private const OPTION_FLAG_IS_REQUIRED = 'isRequired';
 
-    private const OPTION_DIRECTORY       = 'directory';
-    private const OPTION_THRESHOLD       = 'threshold';
-    private const OPTION_MATCH_PRIORITY  = 'matchpriority';
-    private const OPTION_MOVE_DUPLICATES = 'moveduplicates';
+    private const OPTION_DIRECTORY        = 'directory';
+    private const OPTION_BACKUP_DIRECTORY = 'backupdirectory';
+    private const OPTION_THRESHOLD        = 'threshold';
+    private const OPTION_MATCH_PRIORITY   = 'matchpriority';
+    private const OPTION_MOVE_DUPLICATES  = 'moveduplicates';
 
     private const RUNTIME_OPTIONS = [
-        self::OPTION_DIRECTORY       => [
+        self::OPTION_DIRECTORY        => [
             self::OPTION_FLAG_LONG        => 'dir',
             self::OPTION_FLAG_SHORT       => 'd',
             self::OPTION_FLAG_IS_REQUIRED => true,
             self::OPTION_FLAG_IS_BOOLEAN  => false
         ],
-        self::OPTION_THRESHOLD       => [
+        self::OPTION_BACKUP_DIRECTORY => [
+            self::OPTION_FLAG_LONG        => 'out',
+            self::OPTION_FLAG_SHORT       => 'o',
+            self::OPTION_FLAG_IS_REQUIRED => true,
+            self::OPTION_FLAG_IS_BOOLEAN  => false
+        ],
+        self::OPTION_THRESHOLD        => [
             self::OPTION_FLAG_LONG        => 'threshold',
             self::OPTION_FLAG_SHORT       => 't',
             self::OPTION_FLAG_IS_REQUIRED => true,
             self::OPTION_FLAG_IS_BOOLEAN  => false
         ],
-        self::OPTION_MATCH_PRIORITY  => [
+        self::OPTION_MATCH_PRIORITY   => [
             self::OPTION_FLAG_LONG        => 'match-priority',
             self::OPTION_FLAG_SHORT       => 'm',
             self::OPTION_FLAG_IS_REQUIRED => false,
             self::OPTION_FLAG_IS_BOOLEAN  => true
         ],
-        self::OPTION_MOVE_DUPLICATES => [
+        self::OPTION_MOVE_DUPLICATES  => [
             self::OPTION_FLAG_LONG        => 'move-duplicates',
             self::OPTION_FLAG_SHORT       => '',
             self::OPTION_FLAG_IS_REQUIRED => false,
@@ -62,6 +70,11 @@ class FinderController
     private $inputDirectory;
 
     /**
+     * @var string
+     */
+    private $backupDirectory;
+
+    /**
      * @var int
      */
     private $threshold;
@@ -82,20 +95,44 @@ class FinderController
     private $duplicateImageFinder;
 
     /**
+     * @var DuplicatesRendererInterface
+     */
+    private $duplicatesRenderer;
+
+    /**
+     * @var DuplicatesRemoverInterface
+     */
+    private $duplicatesRemover;
+
+    /**
      * FinderController constructor.
      * @param DuplicateImageFinderInterface $duplicateImageFinder
+     * @param DuplicatesRendererInterface   $duplicatesRenderer
+     * @param DuplicatesRemoverInterface    $duplicatesRemover
      */
-    public function __construct(DuplicateImageFinderInterface $duplicateImageFinder)
-    {
+    public function __construct(
+        DuplicateImageFinderInterface $duplicateImageFinder,
+        DuplicatesRendererInterface $duplicatesRenderer,
+        DuplicatesRemoverInterface $duplicatesRemover
+    ) {
         $this->duplicateImageFinder = $duplicateImageFinder;
-        $this->runtimeOptions       = $this->getOptions();
-        $this->inputDirectory       = $this->getArg($this->runtimeOptions, self::OPTION_DIRECTORY);
-        $this->threshold            = $this->getArg($this->runtimeOptions, self::OPTION_THRESHOLD,
+        $this->duplicatesRenderer   = $duplicatesRenderer;
+        $this->duplicatesRemover    = $duplicatesRemover;
+
+        $this->runtimeOptions    = $this->getOptions();
+        $this->inputDirectory    = $this->getArg($this->runtimeOptions, self::OPTION_DIRECTORY);
+        $this->threshold         = $this->getArg($this->runtimeOptions, self::OPTION_THRESHOLD,
             self::DEFAULT_THRESHOLD);
-        $this->isPrioritizeMatch    = $this->getArg($this->runtimeOptions, self::OPTION_MATCH_PRIORITY);
-        $this->isMoveDuplicates     = $this->getArg($this->runtimeOptions, self::OPTION_MOVE_DUPLICATES);
+        $this->isPrioritizeMatch = $this->getArg($this->runtimeOptions, self::OPTION_MATCH_PRIORITY);
+        $this->isMoveDuplicates  = $this->getArg($this->runtimeOptions, self::OPTION_MOVE_DUPLICATES);
+        if ($this->isMoveDuplicates) {
+            $this->backupDirectory = $this->getArg($this->runtimeOptions, self::OPTION_BACKUP_DIRECTORY);
+        }
     }
 
+    /**
+     * Start the search
+     */
     public function start()
     {
         try {
@@ -110,62 +147,12 @@ class FinderController
 
         $result = $this->duplicateImageFinder->scan($this->inputDirectory, $this->threshold);
 
-        $this->render(...$result);
-    }
-
-    /**
-     * @param DuplicateFile ...$files
-     */
-    private function render(DuplicateFile ...$files) : void {
-        echo "\n-------------------------\n";
-        echo "Result\n";
-        echo "-------------------------\n\n";
-        foreach ($files as $filegroup) {
-            $duplicates = $filegroup->getAlternates();
-            if ($this->isPrioritizeMatch) {
-                usort($duplicates, [$this, 'sortByScore']);
-            }
-            else {
-                usort($duplicates, [$this, 'sortBySize']);
-            }
-            foreach ($duplicates as $k => $duplicate) {
-                if ($k > 0) {
-                    echo '    ';
-                }
-                echo ($duplicate->isBasisFile() ? '* ' : '') . $duplicate->getFilename()."\n";
-            }
-            echo "\n";
-        }
-    }
-
-    /**
-     * usorter
-     *
-     * @param DuplicateFile $file1
-     * @param DuplicateFile $file2
-     *
-     * @return int
-     */
-    private function sortByScore(DuplicateFile $file1, DuplicateFile $file2) : int {
-        $percentGroup1 = floor($file1->getScore() * 10);
-        $percentGroup2 = floor($file2->getScore() * 10);
-        if ($percentGroup1 != $percentGroup2) {
-            return $percentGroup2 - $percentGroup1;
+        if ($this->isMoveDuplicates) {
+            $this->duplicatesRemover->moveDuplicates($this->isPrioritizeMatch, $this->backupDirectory, ...$result);
+        } else {
+            $this->duplicatesRenderer->render($this->isPrioritizeMatch, ...$result);
         }
 
-        return $file2->getFilesize() - $file1->getFilesize();
-    }
-
-    /**
-     * usorter
-     *
-     * @param DuplicateFile $file1
-     * @param DuplicateFile $file2
-     *
-     * @return int
-     */
-    private function sortBySize(DuplicateFile $file1, DuplicateFile $file2) : int {
-        return ($file2->getFilesize() * $file2->getScore()) - ($file1->getFilesize() * $file1->getScore());
     }
 
     /**
@@ -180,6 +167,9 @@ class FinderController
         }
         if (!is_numeric($this->threshold) || $this->threshold < 1 || $this->threshold > 100) {
             throw new InvalidArgumentException('Threshold must be a number between 1 and 100');
+        }
+        if ($this->isMoveDuplicates && empty($this->backupDirectory)) {
+            throw new MissingArgumentException('You must define the output directory using the -o or --out option');
         }
         if ($this->isPrioritizeMatch) {
             throw new ContinuableException('Priotitizing match percentage is faulty when you want to keep bigger files and there are duplicate smaller files. Use with caution. Press any key to continue. Ctrl+C to stop');

@@ -14,6 +14,7 @@ php finder.php  -d testfolder -t 60
 * -d, --dir - Input directory
 * -m, --match-priority - Prioritize files with higher similarity instead of prioritizing larger files. This is faulty when you have a high resolution file, and several duplicated smaller files. The smaller files will be matched 100% with each other and will rank higher (will delete the bigger file)
 * --move-duplicates - Will remove the duplicates from the input directory and move them to a backup directory
+* -o, --out - Where the duplicates will be moved. Required when `--move-duplicates` is specified
 
 ## Algorithm
 Files are recursively fetched in the given directory. Each image file is compared to one another using 3 phases:
