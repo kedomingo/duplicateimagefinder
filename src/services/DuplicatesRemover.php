@@ -5,9 +5,6 @@ namespace DIF\Services;
 use DIF\Models\DuplicateFile;
 
 final class DuplicatesRemover implements DuplicatesRemoverInterface {
-
-
-
     /**
      * @var DuplicatesSorterInterface
      */
@@ -42,11 +39,13 @@ final class DuplicatesRemover implements DuplicatesRemoverInterface {
                     continue;
                 }
                 $newpath = $destinationDir . '/' . $duplicate->getFilename();
-                mkdir(dirname($newpath), 0777, true);
+                if (!file_exists(dirname($newpath))) {
+                    mkdir(dirname($newpath), 0777, true);
+                }
                 rename($duplicate->getFilename(), $newpath);
             }
         }
 
-        echo "\n\nMoved the duplicates to $destinationDir";
+        echo "\n\nMoved the duplicates to $destinationDir\n\n";
     }
 }
