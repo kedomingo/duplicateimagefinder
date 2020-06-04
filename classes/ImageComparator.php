@@ -15,30 +15,27 @@ class ImageComparator
     private const COLOR_SCORE_WEIGHT = 90;
 
     /**
-     * @param ImageResource $image1
-     * @param ImageResource $image2
-     *
+     * @param FileResource $file1
+     * @param FileResource $file2
      * @return float
      */
-    public function compare(ImageResource $image1, ImageResource $image2)
+    public function compare(FileResource $file1, FileResource $file2)
     {
-        $hash1 = $image1->getFileIdentifier();
-        $hash2 = $image2->getFileIdentifier();
-        echo "   +++ Checking $hash1 and $hash2\n";
+        $hash1 = $file1->getUniqueIdentifier();
+        $hash2 = $file2->getUniqueIdentifier();
+
+        // if both are the same duplicates, return max value
+        if (!empty($hash1) && $hash1 === $hash2) {
+            // echo "Skipping " . $file2->getName() . " because duplicate\n";
+            return 1;
+        }
         if (isset($this->knownScores[$hash1][$hash2]) || isset($this->knownScores[$hash2][$hash1])) {
-            echo "Skipping " . $image2->getfilename() . " because known\n";
+            // echo "Skipping " . $file2->getName() . " because score is known\n";
             return $this->knownScores[$hash1][$hash2] ?? $this->knownScores[$hash2][$hash1];
         }
 
-        // If at least one is a known duplicate
-        if (!empty($image1->getFileIdentifier()) || !empty($image2->getFileIdentifier())) {
-            // if both are the same duplicates, return max value
-            if ($image1->getFileIdentifier() === $image2->getFileIdentifier()) {
-                echo "Skipping " . $image2->getfilename() . " because duplicate\n";
-                return 1;
-            }
-        }
-
+        $image1      = $file1->getImageResource();
+        $image2      = $file2->getImageResource();
         $heightScore = $this->compareHeights($image1, $image2);
         $colorsScore = $this->compareImageColors($image1, $image2);
         $score       = (($heightScore * self::HEIGHT_SCORE_WEIGHT) + ($colorsScore * self::COLOR_SCORE_WEIGHT)) / 100;

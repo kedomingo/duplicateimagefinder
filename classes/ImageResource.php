@@ -12,7 +12,7 @@ class ImageResource
     private $img;
 
     /**
-     * @var FileInfo
+     * @var FileResource
      */
     private $fileinfo;
 
@@ -53,12 +53,12 @@ class ImageResource
     /**
      * Create a resource from a given file
      *
-     * @param FileInfo $fileInfo
+     * @param FileResource $fileInfo
      *
      * @return ImageResource
      * @throws UnsupportedImageException
      */
-    public static function createFromFile(FileInfo $fileInfo)
+    public static function createFromFile(FileResource $fileInfo)
     {
         $filename = $fileInfo->getName();
         $mimetype = exif_imagetype($filename);
@@ -85,7 +85,7 @@ class ImageResource
                 break;
         }
         $instance = new ImageResource(new ImageResizer());
-        $instance->setFileInfo($fileInfo);
+        $instance->setFileResource($fileInfo);
         $instance->setResource($img);
         $instance->setTotalColorAverage($instance->calculateTotalAverage());
 
@@ -93,10 +93,10 @@ class ImageResource
     }
 
     /**
-     * @param FileInfo $fileInfo
+     * @param FileResource $fileInfo
      * @return void
      */
-    private function setFileInfo(FileInfo $fileInfo) : void
+    private function setFileResource(FileResource $fileInfo) : void
     {
         $this->fileinfo = $fileInfo;
     }

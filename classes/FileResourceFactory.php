@@ -1,22 +1,27 @@
 <?php
 
-class ImageResourceFactory
+class FileResourceFactory
 {
     private const DEFAULT_SCALE_WIDTH = 32;
 
     /**
      * @param string ...$filenames
      *
-     * @return ImageResource[]
+     * @return FileResource[]
      * @throws Exception
      */
-    public function getImageResources(string ...$filenames) : array
+    public function getFileResources(string ...$filenames) : array
     {
-        $precheckedFiles = $this->findDuplicateFiles(...$filenames);
+        $fileInfos = [];
+        foreach ($filenames as $filename) {
+            $fileInfos[] = new FileResource($filename);
+        }
+
+        $precheckedFiles = $this->findDuplicateFiles(...$fileInfos);
         $imageResources  = [];
 
         $uniqueResources = [];
-        foreach ($precheckedFiles as $file) {
+        foreach ($precheckedFiles as $k => $file) {
             if (!isset($uniqueResources[$file->getUniqueIdentifier()])) {
                 // ONLY CREATE ONE RESOURCE FOR A UNIQUE HASH
                 $uniqueResources[$file->getUniqueIdentifier()] = 1;
@@ -24,6 +29,7 @@ class ImageResourceFactory
                 try {
                     $image = ImageResource::createFromFile($file);
                 } catch (UnsupportedImageException $e) {
+                    unset($precheckedFiles[$k]);
                     continue;
                 }
                 $imageResource    = $image->scale(self::DEFAULT_SCALE_WIDTH); // Use a downscaled image as resource
@@ -34,22 +40,20 @@ class ImageResourceFactory
             }
         }
 
-        return $imageResources;
+        return $precheckedFiles;
     }
 
     /**
      * Find exact duplicate files
      *
-     * @param string ...$filenames
-     *
-     * @return FileInfo[]
+     * @param FileResource[] $files
+     * @return FileResource[]
      */
-    private function findDuplicateFiles(string ...$filenames) : array
+    private function findDuplicateFiles(FileResource ...$files) : array
     {
         $fileInfos = [];
         // Group files by size
-        foreach ($filenames as $filename) {
-            $fileInfo                          = new FileInfo($filename);
+        foreach ($files as $fileInfo) {
             $fileInfos[$fileInfo->getSize()][] = $fileInfo;
         }
         $result = [];
@@ -67,7 +71,7 @@ class ImageResourceFactory
     }
 
     /**
-     * @param FileInfo[] $files
+     * @param FileResource[] $files
      */
     private function identifyActualDuplicatesFromSameSizeFiles(&$files)
     {
@@ -75,7 +79,7 @@ class ImageResourceFactory
         for ($i = 0; $i < $fileCount; $i++) {
             for ($j = $i + 1; $j < $fileCount; $j++) {
                 /**
-                 * @var FileInfo[] $files
+                 * @var FileResource[] $files
                  */
                 if (empty($files[$i]->getTrueHash())) {
                     $files[$i]->setHash();

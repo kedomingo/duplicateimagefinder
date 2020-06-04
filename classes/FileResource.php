@@ -1,8 +1,7 @@
 <?php
 
-class FileInfo
+class FileResource
 {
-
     /**
      * @var string
      */
@@ -19,7 +18,7 @@ class FileInfo
     private $hash;
 
     /**
-     * @var FileInfo[]
+     * @var FileResource[]
      */
     private $duplicates;
 
@@ -74,20 +73,19 @@ class FileInfo
      */
     public function setHash() : void
     {
-        echo '  >>> setting hash to '.$this->getName()."\n";
         $this->hash = md5_file($this->getName());
     }
 
     /**
-     * @param FileInfo $duplicate
+     * @param FileResource $duplicate
      */
-    public function setDuplicateTo(FileInfo $duplicate) : void
+    public function setDuplicateTo(FileResource $duplicate) : void
     {
         $this->duplicates[] = $duplicate;
     }
 
     /**
-     * @return FileInfo[]
+     * @return FileResource[]
      */
     public function getDuplicates() : array
     {
@@ -116,5 +114,29 @@ class FileInfo
         foreach ($this->getDuplicates() as $fileInfo) {
             $fileInfo->setImageResource($imageResource);
         }
+    }
+
+    /**
+     * @return ImageResource
+     */
+    public function getImageResource() : ImageResource {
+        return $this->imageResource;
+    }
+
+    /**
+     * @param FileResource $other
+     * @return int|lt
+     */
+    public function compareColorAverageTo(FileResource $other)
+    {
+        return $this->getImageResource()->compareColorAverageTo($other->getImageResource());
+    }
+
+    /**
+     * @return ImageColor
+     */
+    public function getTotalColorAverage() : ImageColor
+    {
+        return $this->getImageResource()->getTotalColorAverage();
     }
 }
