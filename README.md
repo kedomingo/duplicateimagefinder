@@ -79,6 +79,10 @@ The scores of each pixel compared are averaged to get the total color-comparison
 #### Performance
 This is a bad solution because in the worst case, each file is being compared to all other files in the input. A directory with 1,000 files will require at most ~500,000 comparisons. Then between two files, all the pixels are being compared. This is only slightly improved by reducing the dimension of the image. Performance will be worse if the images in the directory are large, say, more than 1mb (when the file has similar sizes, it will be `md5_file`d; the image will be resized from a huge x,xxx px to a 1x1 px image, etc).
 
+From personal use, I was able to scan a directory of ~3,000 images, with a mix of low and high resolution (3MB+ files) in 5 minutes, using macbook pro (core i7, SSD) and with 512M of php memory. It was able to detect 146 original files and their duplicates. I tried 256M but it was not enough.
+
+`php -d memory_limit=512M finder.php ...`
+
 #### Accuracy
 This is a naïve solution written as a quick workaround to paid apps. The objective of this solution is to find almost exact matches (Resizing, slight cropping, slight color shift). No AI is involved.
 
