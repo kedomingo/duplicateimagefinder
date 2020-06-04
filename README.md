@@ -20,12 +20,12 @@ Files are recursively fetched in the given directory. Each image file is compare
 
 ### Phase 1: Duplicate File Detection
 1. Get the file sizes from the list, group the files with exactly the same sizes.
-2. From the groups, calculate the MD5sum of the files and compare each other. Mark the files with the same hashes as duplicates
+2. From groups of 2 or more files, calculate the MD5sum of the files and compare with each other. Mark the files with the same hashes as duplicates
 
 ### Phase 2: Total Scene Color
 1. Resize the image to a 1x1 pixel, and let GD decide the average color of the pixel.
-2. Sort the files based on the pixels color closeness to the other files.
-3. Use the user-given threshold to skip files that is beyond threshold to save processing power (e.g. If the given threshold is 80% - if pixel of image 100 is only 79% similar to pixel of image 1, skip images 100 and beyond)
+2. Sort the files based on the pixels' color closeness to the other files - resulting in a list of images with similar scene colors the closer they are in the list. The goal is to have a decreasing closeness value when comparing the first image against the second- up to the last image in the list.
+3. Use the user-given threshold to skip images with a closeness value far enough from the current image being checked to save processing power (e.g. When comparing image 1 with 999 other images, given threshold of 80% - if pixel of image 100 is only 79% similar to pixel of image 1, skip images 100-1000 because they will all have a closeness value < 80%)
 
 ### Phase 3: Scaled down image
 1. From the images with similar scenes from Phase 2, downsample them to 32px
@@ -54,12 +54,10 @@ The scores of each pixel compared are averaged to get the total color-comparison
 ### Limitations
 
 #### Performance
-This is a bad solution because each file are being compared to each other,
-then between two files, all the pixels are being compared. A directory with 1,000 files will require 1,000,000 comparisons. 
-This will be worse if the images in the directory are large, say, more than 1mb.
+This is a bad solution because in the worst case, each file is being compared to all other files in the input. A directory with 1,000 files will require at most ~500,000 comparisons. Then between two files, all the pixels are being compared. This is only slightly improved by reducing the dimension of the image. Performance will be worse if the images in the directory are large, say, more than 1mb (when the file has similar sizes, it will be `md5_file`d; the image will be resized from a huge x,xxx px to a 1x1 px image, etc).
 
 #### Accuracy
-This is a naïve solution written as a quick workaround to paid apps. The objective of this solution is to find almost exact matches. No AI is involved.
+This is a naïve solution written as a quick workaround to paid apps. The objective of this solution is to find almost exact matches (Resizing, slight cropping, slight color shift). No AI is involved.
 
 A more robust approach to image similarity should also take into a account not just the colors in the same positions, but also whether the objects in the image has shifted (the colors will not match in the same coordinates). This will require a more advanced solution.
 
