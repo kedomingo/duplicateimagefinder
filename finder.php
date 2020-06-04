@@ -1,26 +1,57 @@
 <?php
 
+require 'classes/ImageResourceCollection.php';
 require 'classes/ImageColor.php';
 require 'classes/ImageResource.php';
 require 'classes/ImageResizer.php';
 require 'classes/ImageComparator.php';
 require 'classes/UnsupportedImageException.php';
+require 'classes/ImageResourceFactory.php';
+require 'classes/FileInfo.php';
 
 class Finder
 {
     private $comparator;
 
+    /**
+     * @var ImageResourceFactory
+     */
+    private $imageResourceFactory;
+
+    /**
+     * Finder constructor.
+     * @param ImageComparator      $comparator
+     * @param ImageResourceFactory $imageResourceFactory
+     */
     public function __construct(
-        ImageComparator $comparator
+        ImageComparator $comparator,
+        ImageResourceFactory $imageResourceFactory
     ) {
-        $this->comparator = $comparator;
+        $this->comparator           = $comparator;
+        $this->imageResourceFactory = $imageResourceFactory;
     }
 
+    /**
+     * Scan the directory for duplicates
+     *
+     * @param string $directory
+     * @param int    $threshold
+     * @return array
+     * @throws Exception
+     */
     public function scan(string $directory, int $threshold)
     {
-        $directory           = rtrim($directory, '/');
-        $files               = $this->getFiles($directory);
-        $fileCount           = count($files);
+        $directory = rtrim($directory, '/');
+        $files     = $this->getFiles($directory);
+
+        $imageResources = $this->imageResourceFactory->getImageResources(...$files);
+        usort($imageResources, function (ImageResource $a, ImageResource $b) {
+            return $a->compareColorAverageTo($b);
+        });
+
+
+
+        $fileCount           = count($imageResources);
         $requiredComparisons = $fileCount * ($fileCount - 1) / 2;
         echo sprintf("Found %d files. %s max comparisons required\n", $fileCount, number_format($requiredComparisons));
 
@@ -28,25 +59,30 @@ class Finder
         $comparisons = [];
         $skip        = [];
         for ($i = 0; $i < $fileCount; $i++) {
-            if (isset($skip[$files[$i]])) {
-                //echo sprintf("\nSkipping %s because already a duplicate\n", $files[$i]);
-                continue;
+            $file1 = $imageResources[$i]->getFilename();
+            if (isset($skip[$file1])) {
+                // continue;
             }
             for ($j = $i + 1; $j < $fileCount; $j++) {
-                $percent = ++$progress * 100 / $requiredComparisons;
-                echo "\r" . $progress . ' ' . round($percent, 2) . '% ';
-
-                if (isset($skip[$files[$j]])) {
-                    // echo sprintf("\nSkipping %s because already a duplicate\n", $files[$j]);
-                    continue;
+                $file2 = $imageResources[$j]->getFilename();
+                if (isset($skip[$file2])) {
+                    // continue;
                 }
-                try {
-                    $comparisons[$files[$i]][$files[$j]] = $this->comparator->compare($files[$i], $files[$j]);
-                    if ($comparisons[$files[$i]][$files[$j]] * 100 >= $threshold) {
-                        $skip[$files[$j]] = 1;
-                    }
-                } catch (UnsupportedImageException $e) {
-                    // do nothing
+                $percent = ++$progress * 100 / $requiredComparisons;
+                // echo "\r" . $progress . ' ' . round($percent, 2) . '% ';
+
+                // current image being checked is already outside similarity threshold. Skip this and the next images
+                if ($imageResources[$i]->getTotalColorAverage()->compareTo($imageResources[$j]->getTotalColorAverage()) * 100 < $threshold) {
+                    $progress += $fileCount - ($j + 1);
+                    echo "Breaking\n";
+                    // break;
+                }
+
+                echo "Checking $file1 and $file2...\n";
+                $comparisons[$file1][$file2] = $this->comparator->compare($imageResources[$i], $imageResources[$j]);
+                if ($comparisons[$file1][$file2] * 100 >= $threshold) {
+                    $skip[$file1] = 1;
+                    $skip[$file2] = 1;
                 }
             }
         }
@@ -75,8 +111,9 @@ class Finder
 }
 
 
-$comparator       = new ImageComparator(new ImageResizer());
-$finder           = new Finder($comparator);
+$comparator       = new ImageComparator();
+$factory          = new ImageResourceFactory();
+$finder           = new Finder($comparator, $factory);
 $defaultThreshold = 60;
 
 // Directory
@@ -114,6 +151,8 @@ if ($prioritizeMatch) {
 
 $result = $finder->scan($directory, $threshold);
 
+print_r($result);
+exit;
 
 $foundDuplicates = [];
 foreach ($result as $file1 => $duplicates) {

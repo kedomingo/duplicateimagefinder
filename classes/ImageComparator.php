@@ -2,8 +2,11 @@
 
 class ImageComparator
 {
-    // Downsample image to this wide
-    private const COMPARISON_WIDTH = 32;
+    /**
+     * Keep track of known scores between 2 hashes. Prevent re-calculation of duplicate files
+     * @var array
+     */
+    private $knownScores = [];
 
     // height score contributes to 10% of the total score
     private const HEIGHT_SCORE_WEIGHT = 10;
@@ -11,90 +14,38 @@ class ImageComparator
     // color score contributes to 60% of the total score
     private const COLOR_SCORE_WEIGHT = 90;
 
-    private $resizer;
-
     /**
-     * @var ImageResource[]
-     */
-    private static $resourceCache;
-
-    /**
-     * ImageComparator constructor.
-     * @param ImageResizer $resizer
-     */
-    public function __construct(ImageResizer $resizer)
-    {
-        $this->resizer = $resizer;
-    }
-
-    /**
-     * @param $file1
-     * @param $file2
+     * @param ImageResource $image1
+     * @param ImageResource $image2
+     *
      * @return float
-     * @throws Exception
      */
-    public function compare($file1, $file2)
+    public function compare(ImageResource $image1, ImageResource $image2)
     {
-        $score = $this->compareWithSize($file1, $file2, self::COMPARISON_WIDTH);
+        $hash1 = $image1->getFileIdentifier();
+        $hash2 = $image2->getFileIdentifier();
+        echo "   +++ Checking $hash1 and $hash2\n";
+        if (isset($this->knownScores[$hash1][$hash2]) || isset($this->knownScores[$hash2][$hash1])) {
+            echo "Skipping " . $image2->getfilename() . " because known\n";
+            return $this->knownScores[$hash1][$hash2] ?? $this->knownScores[$hash2][$hash1];
+        }
+
+        // If at least one is a known duplicate
+        if (!empty($image1->getFileIdentifier()) || !empty($image2->getFileIdentifier())) {
+            // if both are the same duplicates, return max value
+            if ($image1->getFileIdentifier() === $image2->getFileIdentifier()) {
+                echo "Skipping " . $image2->getfilename() . " because duplicate\n";
+                return 1;
+            }
+        }
+
+        $heightScore = $this->compareHeights($image1, $image2);
+        $colorsScore = $this->compareImageColors($image1, $image2);
+        $score       = (($heightScore * self::HEIGHT_SCORE_WEIGHT) + ($colorsScore * self::COLOR_SCORE_WEIGHT)) / 100;
+
+        $this->knownScores[$hash1][$hash2] = $this->knownScores[$hash2][$hash1] = $score;
 
         return $score;
-    }
-
-    /**
-     * @param string $file1
-     * @param string $file2
-     * @param int    $width
-     *
-     * @return float|int
-     * @throws Exception
-     */
-    private function compareWithSize(string $file1, string $file2, int $width)
-    {
-        $img1 = $this->getResource($file1);
-        $img2 = $this->getResource($file2);
-
-        // If two files are exactly the same, return immediately with the maximum score
-        $score = $this->compareFileSize($file1, $file2);
-        if (!empty($score)) {
-            return $score;
-        }
-
-        $resized1 = $this->resizer->resize($img1, $width);
-        $resized2 = $this->resizer->resize($img2, $width);
-
-        $heightScore = $this->compareHeights($resized1, $resized2);
-        $colorsScore = $this->compareImageColors($resized1, $resized2);
-
-        return (($heightScore * self::HEIGHT_SCORE_WEIGHT) + ($colorsScore * self::COLOR_SCORE_WEIGHT)) / 100;
-    }
-
-    /**
-     * @param string $file1
-     * @param string $file2
-     *
-     * @return int
-     */
-    private function compareFileSize(string $file1, string $file2) : int {
-
-        return md5_file($file1) === md5_file($file2) ? 1 : 0;
-    }
-
-    /**
-     * @param string $filename
-     * @return ImageResource
-     * @throws Exception
-     */
-    private function getResource(string $filename) : ImageResource
-    {
-        if (isset(static::$resourceCache[$filename])) {
-            return static::$resourceCache[$filename];
-        }
-        if (isset(static::$resourceCache[realpath($filename)])) {
-            return static::$resourceCache[realpath($filename)];
-        }
-        static::$resourceCache[$filename] = ImageResource::createFromFilename($filename);
-
-        return static::$resourceCache[$filename];
     }
 
     /**
@@ -131,33 +82,11 @@ class ImageComparator
                 $color1 = $img1->getColorAt($x, $y);
                 $color2 = $img2->getColorAt($x, $y);
 
-                $scores[] = $this->compareColors($color1, $color2);
+                $scores[] = $color1->compareTo($color2);
             }
         }
 
         return array_sum($scores) / count($scores);
-    }
-
-    /**
-     * Compares 2 color values. The farther each rgb component is between the 2 images, the lower the score.
-     * This is achieved by multiplying the closeness of each component, achieving an exponential drop in score
-     * TODO: ALPHA for PNG
-     *
-     *
-     * @param ImageColor $color1
-     * @param ImageColor $color2
-     * @return float
-     */
-    private function compareColors(ImageColor $color1, ImageColor $color2) : float
-    {
-        $redCloseness   = $this->closeness($color1->getRed(), $color2->getRed());
-        $greenCloseness = $this->closeness($color1->getGreen(), $color2->getGreen());
-        $blueCloseness  = $this->closeness($color1->getBlue(), $color2->getBlue());
-        $alphaCloseness = $this->closeness($color1->getAlpha(), $color2->getAlpha());
-
-        $score = $redCloseness * $greenCloseness * $blueCloseness;
-
-        return $score;
     }
 
     /**

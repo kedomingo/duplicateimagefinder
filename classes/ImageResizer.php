@@ -2,15 +2,18 @@
 
 class ImageResizer
 {
+    private const DEFAULT_HEIGHT = -1;
+
     /**
      * @param ImageResource $image
      * @param               $width
-     * @return ImageResource
+     * @param null          $height
+     * @return bool|resource
      */
-    public function resize(ImageResource $image, $width) : ImageResource
+    public function scale(ImageResource $image, $width, $height = self::DEFAULT_HEIGHT)
     {
-        $image->setResource(imagescale($image->getResource(), $width));
+        $result = imagescale($image->getResource(), $width, empty($height) ? self::DEFAULT_HEIGHT : $height);
 
-        return $image;
+        return $result;
     }
 }
