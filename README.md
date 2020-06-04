@@ -4,9 +4,19 @@ A simple PHP script that finds duplicate photos in a a given directory.
 ## Usage
 
 ```
+# Install composer dependencies
+composer install
+
+# Scan the directory for duplicates
 php finder.php  -d <input dir> -t <threshold percent>
 
 php finder.php  -d testfolder -t 60
+
+# Remove the duplicates from the directory
+php finder.php  -d <input dir> -t <threshold percent> --move-duplicates -o <backup dir>
+
+php finder.php  -d testfolder -t 60 --move-duplicates -o dupes_backup
+
 ```
 
 ### Options
