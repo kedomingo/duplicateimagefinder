@@ -3,13 +3,17 @@ A simple PHP script that finds duplicate photos in a a given directory.
 
 ## Usage
 
-In this sample usage, an execution memory limit of 4G is invoked because this is currently memory hungry (opened image files are cached in memory to prevent frequent calls to the PHP GD `imagecreatefrom...` functions)
-
 ```
-php -d memory_limit=4096M finder.php  -d <input dir> -t <threshold percent>
+php finder.php  -d <input dir> -t <threshold percent>
 
-php -d memory_limit=4096M finder.php  -d testfolder -t 60
+php finder.php  -d testfolder -t 60
 ```
+
+### Options
+* -t, --threshold - Similarity Threshold in percent. Scores lower than this will not be reported as similar
+* -d, --dir - Input directory
+* -m, --match-priority - Prioritize files with higher similarity instead of prioritizing larger files. This is faulty when you have a high resolution file, and several duplicated smaller files. The smaller files will be matched 100% with each other and will rank higher (will delete the bigger file)
+* --move-duplicates - Will remove the duplicates from the input directory and move them to a backup directory
 
 ## Algorithm
 Files are recursively fetched in the given directory. Each image file is compared to one another by:
